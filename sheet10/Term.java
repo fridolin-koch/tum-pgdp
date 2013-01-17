@@ -1,5 +1,6 @@
 package sheet10;
 
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -80,21 +81,23 @@ public class Term {
 	}
 
 	public Term(String start, String end, String description, String location) throws InvalidDateFormatException, EndBeforeStartDateException	{
-		//get timestamps
+		//get time stamps
 		int tsStart = Term.convertDateStringToTimestamp(start);
 		int tsEnd = Term.convertDateStringToTimestamp(end);
 		
 		if(tsEnd < tsStart)	{
 			throw new EndBeforeStartDateException(start,end);
 		}
+		//set start and end
+		this.start = tsStart;
+		this.end = tsEnd;
 		//set description and location
 		this.description = description;
 		this.location = location;
 	}
 	
 	
-	private static int convertDateStringToTimestamp(String date) throws InvalidDateFormatException	{
-		
+	private static int convertDateStringToTimestamp(String date) throws InvalidDateFormatException	{	
 		try	{
 			SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 			Date d = df.parse(date);
@@ -102,7 +105,6 @@ public class Term {
 		} catch(ParseException e)	{
 			throw new InvalidDateFormatException(date);
 		}
-		
 	}
 
 	/**
@@ -132,4 +134,25 @@ public class Term {
 	public String getLocation() {
 		return location;
 	}
+	
+	public String toString()	{
+		
+		//convert timestamp to date format 
+		Date startDate = new Date( (long)this.start*1000 );
+		Date endDate = new Date( (long)this.end*1000 );
+		
+		return String.format("%s - %s | Desc: %s | Loc: %s", startDate.toString() , endDate.toString(), this.description, this.location);
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if(obj instanceof Term)	{
+			Term that = (Term)obj;
+			
+			return this.start == that.getStart() && this.end == that.getEnd() && this.description.equals(that.getDescription()) && this.location.equals(that.getLocation());
+			
+		}
+		return false;
+	}
+	
 }
