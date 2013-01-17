@@ -1,11 +1,20 @@
 package sheet10;
 
 import java.io.*;
+import java.util.ArrayList;
 
+/**
+ * When I started writing this class, I had no information that the tags on each level are unique... so this class supports also duplicate tags. 
+ * 
+ * 
+ * @author Frido Koch
+ *
+ */
 abstract class XmlTree {
 
     // Exceptions that might arise during tree load/access.
-    public static class XmlException extends Exception {
+    @SuppressWarnings("serial")
+	public static class XmlException extends Exception {
 
         public String item;
 
@@ -18,13 +27,15 @@ abstract class XmlTree {
         }
     }
 
-    public static class MisformatedInputException extends XmlException {
+    @SuppressWarnings("serial")
+	public static class MisformatedInputException extends XmlException {
         public MisformatedInputException(String item) {
             super(item);
         }
     }
 
-    public static class NoValueException extends XmlException {
+    @SuppressWarnings("serial")
+	public static class NoValueException extends XmlException {
         public XmlTree node;
 
         public NoValueException(XmlTree node) {
@@ -33,7 +44,8 @@ abstract class XmlTree {
         }
     }
 
-    public static class NoNodeException extends XmlException {
+    @SuppressWarnings("serial")
+	public static class NoNodeException extends XmlException {
         public XmlTree node;
 
         public NoNodeException(XmlTree node, String item) {
@@ -42,7 +54,8 @@ abstract class XmlTree {
         }
     }
 
-    public static class NotAvailable extends XmlException {
+    @SuppressWarnings("serial")
+	public static class NotAvailable extends XmlException {
         public XmlTree node;
 
         public NotAvailable(XmlTree node, String item) {
@@ -51,6 +64,7 @@ abstract class XmlTree {
         }
     }
 
+	@SuppressWarnings("serial")
 	public static class AlreadyAvailable extends XmlException {
         public XmlTree node;
 
@@ -60,14 +74,53 @@ abstract class XmlTree {
         }
     }
 
+	protected ArrayList<XmlTree> childNodes;
+	
+	protected String tagName;
+	
+	public String getTagName()	{
+		return this.tagName;
+	}
+	
     // Default implementations (node has no value and value has no nodes):
     public String getValue() throws NoValueException {
-        //FILL IN
-    	return "";
+    	//method is overwritten by child class and outer xmllight has no value
+    	throw new NoValueException(this);
     }
-    public XmlTree getNode(String name) throws NoNodeException, NotAvailable {
-        //FILL IN
-    	return null;
+    
+    /**
+     * Returns the first XmlNode matching the given tag name
+     * @param name The tag name
+     * @throws NotAvailable 
+     */
+    public XmlTree getNode(String name) throws NotAvailable, NoNodeException	{
+    	for(XmlTree tree : this.childNodes)	{
+    		if( tree.getTagName().equals(name) )	{
+    			return tree;
+    		}
+		}
+    	throw new NotAvailable(this, name);
+    }
+    
+    /**
+     * Returns a list with all nodes matching the tag
+     * 
+     * @param name The tag name
+     * @return An ArrayList with nodes matching the given name
+     * @throws NotAvailable
+     */
+    public ArrayList<XmlTree> getNodes(String name) throws NotAvailable, NoNodeException	{
+    	ArrayList<XmlTree> nodes = new ArrayList<XmlTree>();
+    	for(XmlTree tree : this.childNodes)	{
+    		if( tree.getTagName().equals(name) )	{
+    			nodes.add(tree);
+    		}
+		}
+    	//if no node was found 
+    	if(nodes.size() == 0)	{
+    		throw new NotAvailable(this, name);
+    	}
+    	return nodes;
     }
 
     // For parsing. Returns next visible character (or -1 for EOF)
@@ -116,7 +169,9 @@ abstract class XmlTree {
     	boolean nameComplete = false;
     	boolean readString = true;
     	
-    	int data;
+    	
+    	
+    	int data = 0;
     	while( readString && (data = getNextCharacter(sr)) != -1)	{
     		
 			//found opening char '<'
@@ -131,11 +186,9 @@ abstract class XmlTree {
 				//tag name reading complete
 				nameComplete = true;
 				readString=false;
-			} else if(data == 47)	{
-				//ignore /
 			} else	{
 				if(!(name instanceof StringBuilder))	{
-					throw new MisformatedInputException(sr.toString());
+					throw new MisformatedInputException( String.valueOf( (char)data ) );
 				}
     			//build name and value
     			if(!nameComplete)	{
@@ -147,15 +200,23 @@ abstract class XmlTree {
     			}
 			}
 		}
+    	
+    	String[] ret;
+    	if(data == -1)	{
+    		//return empty array
+    		ret = new String[0];
+    		return ret;
+    	}
+    	
     	//sr.close();
 		
 		//something went really wrong
-		if(!nameComplete)	{
-			throw new MisformatedInputException(sr.toString());
+		if(!nameComplete && data != -1)	{
+			throw new MisformatedInputException( name.toString() );
 		}
 		
 		//build return array
-		String[] ret;
+		
 		if(value instanceof StringBuilder)	{
 			ret = new String[2];
 			ret[0] = name.toString();
@@ -168,38 +229,50 @@ abstract class XmlTree {
 		
     }
 
-
     static class XmlNode extends XmlTree {
-    	
-    	private XmlTree node;
-    	
-    	private String tagName;
-    	
+
         //data structure to store children
         public XmlNode(StringReader sr, String outer) throws IOException, MisformatedInputException, AlreadyAvailable    {
-            //FILL IN
-            //read this and children from sr
-        	String[] currentNode = getNode(sr);
+            
+        	//set tag name
         	this.tagName = outer;
-        	if(currentNode.length == 2)	{
-        		this.node = new XmlValue(currentNode[1]);
-        	} else if(currentNode.length == 1)	{
-        		this.node = new XmlNode(sr, currentNode[0]);
+        	//init HashMap for child maps
+        	this.childNodes = new ArrayList<XmlTree>();
+        	//get current node
+        	String[] currentNode = getNode(sr);
+        	while( currentNode.length > 0)	{
+        		//don't add a new element if this is the end node
+        		if( currentNode[0].charAt(0) == '/' )	{
+        			//its the end of the element so we need to jump one level back up
+        			break; //in this particular case using break makes the code clearer and easier to understand than working with flags.
+        		} else	{
+        			//check if this is a value-node or a node-node
+            		if(currentNode.length == 2)	{
+                		this.childNodes.add( new XmlValue(currentNode[1], currentNode[0]) );
+                	} else if(currentNode.length == 1)	{
+                		this.childNodes.add( new XmlNode(sr, currentNode[0]) );
+                	}
+        		}
+        		//get next node
+        		currentNode = getNode(sr);
         	}
+        	
         }
         
-        public XmlTree getNode()	{
-        	return this.node;
-        }
-        
-        public String getValue()	{
-        	return "";
+        @Override
+        public String getValue() throws NoValueException	{
+        	throw new NoValueException(this);
         }
 
 		@Override
 		protected String toString(String name, String indent) {
-			// TODO Auto-generated method stub
-			return null;
+			StringBuilder b = new StringBuilder();
+			b.append( String.format("%s<%s>\n",indent, name) );
+			for(XmlTree tree : this.childNodes)	{
+				b.append( tree.toString(tree.getTagName(), indent + "\t") );
+			}
+			b.append( String.format("%s</%s>\n",indent, name) );
+			return b.toString();
 		}
     }
 
@@ -207,27 +280,32 @@ abstract class XmlTree {
         
     	private String value;
 
-		//FILL IN
-        //data structure to store value
-        public XmlValue(String value) {
-            //FILL IN
-            //init value
+		//I've had to modify the constructor slightly to get a consistent data structure (tagName)
+        public XmlValue(String value, String tagName) {
+        	//set properties
         	this.value = value;
+        	this.tagName = tagName;
         }
 
-        public XmlNode getNode()	{
-			return null;
-        	//throw new NoNodeException(node, item)
+        @Override
+        public XmlTree getNode(String name) throws NoNodeException	{
+        	throw new NoNodeException(this, name);
         }
         
+        @Override
+        public ArrayList<XmlTree> getNodes(String name) throws NoNodeException	{
+        	throw new NoNodeException(this, name);
+        }
+        
+        @Override
         public String getValue()	{
         	return this.value;
         }
         
 		@Override
 		protected String toString(String name, String indent) {
-			// TODO Auto-generated method stub
-			return null;
+			//just return a single tag, because XmlValue must have no child nodes
+			return String.format("%s<%s=%s>\n", indent, name, this.value);
 		}
     }
 
@@ -248,22 +326,6 @@ abstract class XmlTree {
         }
 
         return new XmlNode(sr, "xmllight");
-
-        /*
-         * names/values must not contain '>'
-         *
-         *<xmllight> //root, must be there
-         *    <node_name1> //node must not have values
-         *        <value_name1=value> //values must not have children
-         *        <value_name2=value>
-         *    </nodename1>
-         *    <node_name2>
-         *        <value_name1=value>
-         *        <value_name2=value>
-         *    </nodename2>
-         *  <value_name1=value>
-         *</xmllight>
-         */
     }
 
     public void safe(StringWriter sw) // Write tree to stream.
