@@ -1,3 +1,12 @@
+/*
+ * Autor: Frido Koch
+ * Email: frido@vresh.net
+ * License: CC BY-NC-SA 3.0 DE 
+ * http://creativecommons.org/licenses/by-nc-sa/3.0/de/
+ * 
+ * 
+ */
+
 package sheet10;
 
 import java.io.*;
@@ -7,7 +16,7 @@ import java.util.Map;
 
 /**
  * @author Frido Koch
- *
+ * 
  */
 abstract class XmlTree {
 
