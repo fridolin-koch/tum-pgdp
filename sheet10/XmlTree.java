@@ -1,5 +1,5 @@
 /*
- * Autor: Frido Koch
+ * Author: Frido Koch
  * Email: frido@vresh.net
  * License: CC BY-NC-SA 3.0 DE 
  * http://creativecommons.org/licenses/by-nc-sa/3.0/de/
