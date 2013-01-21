@@ -2,6 +2,12 @@ package sheet10;
 
 import java.io.StringReader;
 import java.io.StringWriter;
+/*
+ * Author: Frido Koch
+ * Email: frido@vresh.net
+ * License: CC BY-NC-SA 3.0 DE 
+ * http://creativecommons.org/licenses/by-nc-sa/3.0/de/
+ */
 
 public class XmlLight {
 
