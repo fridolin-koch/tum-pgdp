@@ -165,9 +165,6 @@ abstract class XmlTree {
         //split name at the equals sign and return array
         String ret[] = name.split("=");
 
-        if(ret.length == 2)	{
-
-        }
         return ret;
     }
 

@@ -1,13 +1,13 @@
+/*
+ * Author: Frido Koch
+ * Email: frido@vresh.net
+ * License: CC BY-NC-SA 3.0 DE
+ * http://creativecommons.org/licenses/by-nc-sa/3.0/de/
+ */
 package sheet10;
 
 import java.io.StringReader;
 import java.io.StringWriter;
-/*
- * Author: Frido Koch
- * Email: frido@vresh.net
- * License: CC BY-NC-SA 3.0 DE 
- * http://creativecommons.org/licenses/by-nc-sa/3.0/de/
- */
 
 public class XmlLight {
 
@@ -21,20 +21,20 @@ public class XmlLight {
             XmlTree t = XmlTree.load(new StringReader(data));
 
             XmlTree n1 = t.getNode("nodename1");
-            
+
             System.out.println(n1);
-            
+
             XmlTree n1value = n1.getNode("value_name1");
             String val = n1value.getValue();
 
             System.out.println("Value:" + val);
-            
+
             StringWriter out = new StringWriter();
             t.safe(out);
             System.out.println(out.toString());
 
             n1value.getNode("any"); // Should cause an exception.
-            
+
         } catch (Exception e) {
             System.out.println(e.toString());
             e.printStackTrace();
